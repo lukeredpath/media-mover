@@ -34,10 +34,14 @@ my $season_leading_zero_dirs = 0;
 # Set to 1 if you like spaces in the show name for directory names only
 my $spaces_in_show_dirs = 0;
 
+# Skip check to see if file is still growing in size (i.e. being moved)
+my $skip_size_check = 0;
+
 GetOptions(
   "update-plex|u!" => \$update_plex,
   "season-leading-zeros|z" => \$season_leading_zero_dirs,
   "use-spaces|s" => \$spaces_in_show_dirs,
+  "skip-size-check|k" => \$skip_size_check,
   "download-dir|d=s" => \$download_dir,
   "tv-dir|t=s" => \$tv_dir,
   "movie-dir|m=s" => \$movie_dir
@@ -82,6 +86,7 @@ sub move {
 sub wait_for_size {
 # Check to see if file is still being copied, and if so,
 # wait for it to stop growing
+  return 1 if($skip_size_check);
 
 	my $input = shift;
 	my @files;
@@ -125,12 +130,12 @@ sub wait_for_size {
 
 sub determine_type {
 # Determine whether file is a TV show or movie
-
+  
 	my $file = shift;
 
 	# TV shows
 
-	if($file =~ m/^(.*)(?:\s|\.)S(\d{1,2})E(\d{1,2}.*)$/i) {
+	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)S(\d{1,2})E(\d{1,2}.*)$/i) {
 	# Match: <show name>.S<season number>E<episoder number>
 		my $show = $1;
 		my $season = $2;
@@ -140,7 +145,7 @@ sub determine_type {
 		return;
 	}
 
-	if($file =~ m/^(.*)\.(\d{1,2})x(\d{1,2}.*)$/i) {
+	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)(\d{1,2})x(\d{1,2}.*)$/i) {
 	# Match: <show name>.<season number>x<episoder number>
 		my $show = $1;
 		my $season = $2;
@@ -183,10 +188,15 @@ sub do_tv {
 	# since the torrents usually aren't named consistently
 		$show = "Randy.Jackson.Presents:.America's.Best.Dance.Crew";
 	}
-
+	
+	# remove any trailing hyphens
+	$show =~ s/-$//g;
+	$show =~ s/\s+$//;
+  
 	# Convert spaces to .
 	$show =~ s/\s/./g;
 	$episode =~ s/\s/./g;
+	
 
 	# Convert everything to lowercase then
 	# the first letter of each word to uppercase
@@ -276,8 +286,7 @@ opendir($DH_HANDLE, $download_dir) || do {
 
 while(my $item = readdir($DH_HANDLE)) {
 	next if($item =~ m/^\.{1,2}$/);
-
-	next unless(wait_for_size($item));
+  next unless(wait_for_size($item));  
 	determine_type($item);
 }
 
