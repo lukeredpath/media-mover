@@ -135,7 +135,7 @@ sub determine_type {
 
 	# TV shows
 
-	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)S(\d{1,2})E(\d{1,2}.*)$/i) {
+	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)S(\d{1,2})E(\d{1,2}).*$/i) {
 	# Match: <show name>.S<season number>E<episoder number>
 		my $show = $1;
 		my $season = $2;
@@ -145,7 +145,7 @@ sub determine_type {
 		return;
 	}
 
-	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)(\d{1,2})x(\d{1,2}.*)$/i) {
+	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)(\d{1,2})x(\d{1,2}).*$/i) {
 	# Match: <show name>.<season number>x<episoder number>
 		my $show = $1;
 		my $season = $2;
@@ -248,8 +248,11 @@ sub do_tv {
 	if($episode =~ m/^\d\D/) {
 		$episode = '0' . $episode;
 	}
+	
+	$file =~ m/(\.\w{3})$/;
+	my $ext = $1;
 
-	$path .= '/' . $show . '.S' . $season . 'E' . $episode;
+	$path .= '/' . $show . '.S' . $season . 'E' . $episode . $ext;
 
 	$file =~ s/\/$//;
 	$file =  $download_dir . '/' . $file;

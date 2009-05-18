@@ -70,6 +70,13 @@ class MediaMoverTest < Test::Unit::TestCase
       assert File.exist?(File.join(@tv_dir, 'The.Simpsons', 'Season 2', 'The.Simpsons.S02E13.avi'))
     end
     
+    should "strip any extraneous characters from the filename" do
+      show_name = "The Simpsons.S02E13.720p.HDTV.AWESOME.avi"
+      touch File.join(@downloads_dir, show_name)
+      assert do_media_mover!
+      assert File.exist?(File.join(@tv_dir, 'The.Simpsons', 'Season 2', 'The.Simpsons.S02E13.avi'))
+    end
+    
   end
   
   def do_media_mover!(other_options = '')
