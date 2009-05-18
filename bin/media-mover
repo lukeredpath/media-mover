@@ -35,11 +35,11 @@ my $season_leading_zero_dirs = 0;
 my $spaces_in_show_dirs = 0;
 
 GetOptions(
-  "update-plex|u" => \$update_plex,
+  "update-plex|u!" => \$update_plex,
   "season-leading-zeros|z" => \$season_leading_zero_dirs,
   "use-spaces|s" => \$spaces_in_show_dirs,
   "download-dir|d=s" => \$download_dir,
-  "tv-dir|=s" => \$tv_dir,
+  "tv-dir|t=s" => \$tv_dir,
   "movie-dir|m=s" => \$movie_dir
 );
 
