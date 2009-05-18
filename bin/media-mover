@@ -68,19 +68,19 @@ my $LOCK_FILE = '/tmp/' . $PROGNAME;
 sub logger {
 # wrapper to logger(1)
 
-	my $message = shift;
+  my $message = shift;
 
-	system('logger', '-t', $PROGNAME, $message);
+  system('logger', '-t', $PROGNAME, $message);
 }
 
 sub move {
 # Wrapper to system(mv) since File::Copy can't move directories
 
-	my ($src, $dst) = @_;
+  my ($src, $dst) = @_;
 
-	system('mv', $src, $dst) == 0 && return 1;
+  system('mv', $src, $dst) == 0 && return 1;
 
-	return 0;
+  return 0;
 }
 
 sub wait_for_size {
@@ -88,189 +88,189 @@ sub wait_for_size {
 # wait for it to stop growing
   return 1 if($skip_size_check);
 
-	my $input = shift;
-	my @files;
+  my $input = shift;
+  my @files;
 
-	$input = $download_dir . '/' . $input;
+  $input = $download_dir . '/' . $input;
 
-	if(-d $input) {
-		my $dh_input;
-		opendir($dh_input, $input) || do {
-			logger("Unable to open $input: $!");
-			return 0;
-		};
+  if(-d $input) {
+    my $dh_input;
+    opendir($dh_input, $input) || do {
+      logger("Unable to open $input: $!");
+      return 0;
+    };
 
-		while(my $item = readdir($dh_input)) {
-			next if($item =~ m/^\.{1,2}$/);
+    while(my $item = readdir($dh_input)) {
+      next if($item =~ m/^\.{1,2}$/);
 
-			$item = $input . '/' . $item;
+      $item = $input . '/' . $item;
 
-			if(-f $item) {
-				push(@files, $item);
-			}
-		}
+      if(-f $item) {
+        push(@files, $item);
+      }
+    }
 
-		closedir($dh_input);
-	} elsif (-f $input) {
-		push(@files, $input);
-	}
+    closedir($dh_input);
+  } elsif (-f $input) {
+    push(@files, $input);
+  }
 
-	foreach my $file (@files) {
-		my $old = 0;
-		my $new = 1;
-		while($old ne $new) {
-			$old = (stat($file))[7];
-			sleep(5);
-			$new = (stat($file))[7];
-		}
-	}
+  foreach my $file (@files) {
+    my $old = 0;
+    my $new = 1;
+    while($old ne $new) {
+      $old = (stat($file))[7];
+      sleep(5);
+      $new = (stat($file))[7];
+    }
+  }
 
-	return 1;
+  return 1;
 }
 
 sub determine_type {
 # Determine whether file is a TV show or movie
   
-	my $file = shift;
+  my $file = shift;
 
-	# TV shows
+  # TV shows
 
-	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)S(\d{1,2})E(\d{1,2}).*$/i) {
-	# Match: <show name>.S<season number>E<episoder number>
-		my $show = $1;
-		my $season = $2;
-		my $episode = $3;
+  if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)S(\d{1,2})E(\d{1,2}).*$/i) {
+  # Match: <show name>.S<season number>E<episoder number>
+    my $show = $1;
+    my $season = $2;
+    my $episode = $3;
 
-		do_tv($show, $season, $episode, $file);
-		return;
-	}
+    do_tv($show, $season, $episode, $file);
+    return;
+  }
 
-	if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)(\d{1,2})x(\d{1,2}).*$/i) {
-	# Match: <show name>.<season number>x<episoder number>
-		my $show = $1;
-		my $season = $2;
-		my $episode = $3;
+  if($file =~ m/^(.*)(?:(?:\s-)?\s|\.)(\d{1,2})x(\d{1,2}).*$/i) {
+  # Match: <show name>.<season number>x<episoder number>
+    my $show = $1;
+    my $season = $2;
+    my $episode = $3;
 
-		do_tv($show, $season, $episode, $file);
-		return;
-	}
+    do_tv($show, $season, $episode, $file);
+    return;
+  }
 
-	# Movies
+  # Movies
 
-	if($file =~ m/-aXXo/i) {
-		do_movie($file);
-		return;
-	}
+  if($file =~ m/-aXXo/i) {
+    do_movie($file);
+    return;
+  }
 }
 
 sub do_movie {
 # Move the file to the movie directory
 
-	my $file = shift;
-	$file =  $download_dir . '/' . $file;
+  my $file = shift;
+  $file =  $download_dir . '/' . $file;
 
-	move($file, $movie_dir) && do {
-		$PLEX_NEEDS_UPDATE = 1;
-		return 1;
-	};
+  move($file, $movie_dir) && do {
+    $PLEX_NEEDS_UPDATE = 1;
+    return 1;
+  };
 
-	logger("Unable to move movie $file: $!");
-	return 0;
+  logger("Unable to move movie $file: $!");
+  return 0;
 }
 
 sub do_tv {
 # Move the file to the TV show directory
 
-	my ($show, $season, $episode, $file) = @_;
+  my ($show, $season, $episode, $file) = @_;
 
-	if($show =~ m/best\.dance\.crew/i) {
-	# Hack for "Randy Jackson Presents America's Best Dance Crew"
-	# since the torrents usually aren't named consistently
-		$show = "Randy.Jackson.Presents:.America's.Best.Dance.Crew";
-	}
-	
-	# remove any trailing hyphens
-	$show =~ s/-$//g;
-	$show =~ s/\s+$//;
+  if($show =~ m/best\.dance\.crew/i) {
+  # Hack for "Randy Jackson Presents America's Best Dance Crew"
+  # since the torrents usually aren't named consistently
+    $show = "Randy.Jackson.Presents:.America's.Best.Dance.Crew";
+  }
   
-	# Convert spaces to .
-	$show =~ s/\s/./g;
-	$episode =~ s/\s/./g;
-	
+  # remove any trailing hyphens
+  $show =~ s/-$//g;
+  $show =~ s/\s+$//;
+  
+  # Convert spaces to .
+  $show =~ s/\s/./g;
+  $episode =~ s/\s/./g;
+  
 
-	# Convert everything to lowercase then
-	# the first letter of each word to uppercase
-	$show =~ s/(\w)/\L$1/g;
-	$show =~ s/^(\w)/\U$1/;
-	$show =~ s/([^a-zA-Z])(\w)/$1\U$2/g;
-	
-	my $show_dir = $show;
-	# if spaces_in_show_dirs is 1, convert '.' to ' ' just for show directory
-	if ($spaces_in_show_dirs) {
-		$show_dir =~ s/\./ /g;
-	}
+  # Convert everything to lowercase then
+  # the first letter of each word to uppercase
+  $show =~ s/(\w)/\L$1/g;
+  $show =~ s/^(\w)/\U$1/;
+  $show =~ s/([^a-zA-Z])(\w)/$1\U$2/g;
+  
+  my $show_dir = $show;
+  # if spaces_in_show_dirs is 1, convert '.' to ' ' just for show directory
+  if ($spaces_in_show_dirs) {
+    $show_dir =~ s/\./ /g;
+  }
 
-	# if season_leading_zero_dirs = 1 make sure you have leading 0 on 1 digit season dirs, otherwise strip
-	if ($season_leading_zero_dirs) {
-		if ($season =~ /^\d$/) {
-			$season = '0' . $season;
-		}
-	} else {
-		if ($season =~ /^0(\d)$/) {
-			$season = $1;
-		}
-	}
+  # if season_leading_zero_dirs = 1 make sure you have leading 0 on 1 digit season dirs, otherwise strip
+  if ($season_leading_zero_dirs) {
+    if ($season =~ /^\d$/) {
+      $season = '0' . $season;
+    }
+  } else {
+    if ($season =~ /^0(\d)$/) {
+      $season = $1;
+    }
+  }
 
-	my $season_dir = 'Season ' . $season;
+  my $season_dir = 'Season ' . $season;
 
-	my $path = $tv_dir . '/' . $show_dir;
-	if(! -d $path) {
-		mkdir($path) || do {
-			logger("Unable to make $path: $!");
-			return 0;
-		};
-	}
+  my $path = $tv_dir . '/' . $show_dir;
+  if(! -d $path) {
+    mkdir($path) || do {
+      logger("Unable to make $path: $!");
+      return 0;
+    };
+  }
 
-	$path .= '/' . $season_dir;
-	if(! -d $path) {
-		mkdir($path) || do {
-			logger("Unable to make $path: $!");
-			return 0;
-		};
-	}
+  $path .= '/' . $season_dir;
+  if(! -d $path) {
+    mkdir($path) || do {
+      logger("Unable to make $path: $!");
+      return 0;
+    };
+  }
 
-	# Add a leading 0 to season/episode of filename
+  # Add a leading 0 to season/episode of filename
 
-	if($season =~ m/^\d$/) {
-		$season = '0' . $season;
-	}
+  if($season =~ m/^\d$/) {
+    $season = '0' . $season;
+  }
 
-	if($episode =~ m/^\d\D/) {
-		$episode = '0' . $episode;
-	}
-	
-	$file =~ m/(\.\w{3})$/;
-	my $ext = $1;
+  if($episode =~ m/^\d\D/) {
+    $episode = '0' . $episode;
+  }
+  
+  $file =~ m/(\.\w{3})$/;
+  my $ext = $1;
 
-	$path .= '/' . $show . '.S' . $season . 'E' . $episode . $ext;
+  $path .= '/' . $show . '.S' . $season . 'E' . $episode . $ext;
 
-	$file =~ s/\/$//;
-	$file =  $download_dir . '/' . $file;
-	move($file, $path) && do {
-		$PLEX_NEEDS_UPDATE = 1;
-		return 1;
-	};
+  $file =~ s/\/$//;
+  $file =  $download_dir . '/' . $file;
+  move($file, $path) && do {
+    $PLEX_NEEDS_UPDATE = 1;
+    return 1;
+  };
 
-	logger("Unable to move TV show $file: $!");
-	return 0;
+  logger("Unable to move TV show $file: $!");
+  return 0;
 }
 
 sub do_plex {
 # Update plex if $update_plex is 1
 
-	if(($update_plex) && ($PLEX_NEEDS_UPDATE)) {
-		get('http://127.0.0.1:3000/xbmcCmds/xbmcHttp?command=ExecBuiltIn&parameter=XBMC.updatelibrary(video)');
-	}
+  if(($update_plex) && ($PLEX_NEEDS_UPDATE)) {
+    get('http://127.0.0.1:3000/xbmcCmds/xbmcHttp?command=ExecBuiltIn&parameter=XBMC.updatelibrary(video)');
+  }
 }
 
 ##
@@ -278,19 +278,19 @@ sub do_plex {
 ##
 
 trylock($LOCK_FILE) || do {
-	logger("Already running");
-	exit(1);
+  logger("Already running");
+  exit(1);
 };
 
 opendir($DH_HANDLE, $download_dir) || do {
-	logger("Unable to open $download_dir: $!");
-	exit(1);
+  logger("Unable to open $download_dir: $!");
+  exit(1);
 };
 
 while(my $item = readdir($DH_HANDLE)) {
-	next if($item =~ m/^\.{1,2}$/);
+  next if($item =~ m/^\.{1,2}$/);
   next unless(wait_for_size($item));  
-	determine_type($item);
+  determine_type($item);
 }
 
 closedir($DH_HANDLE);
