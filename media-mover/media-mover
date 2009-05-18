@@ -14,6 +14,8 @@ use File::Basename;
 use LockFile::Simple qw(trylock unlock);;
 use LWP::Simple;
 
+use Getopt::Long;
+
 # The directory in which to look for new files
 my $download_dir = '/Volumes/lacie/BitTorrent/Completed';
 
@@ -31,6 +33,15 @@ my $season_leading_zero_dirs = 0;
 
 # Set to 1 if you like spaces in the show name for directory names only
 my $spaces_in_show_dirs = 0;
+
+GetOptions(
+  "update-plex|u" => \$update_plex,
+  "season-leading-zeros|z" => \$season_leading_zero_dirs,
+  "use-spaces|s" => \$spaces_in_show_dirs,
+  "download-dir|d=s" => \$download_dir,
+  "tv-dir|=s" => \$tv_dir,
+  "movie-dir|m=s" => \$movie_dir
+);
 
 #####################
 #####################
